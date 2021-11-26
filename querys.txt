@@ -1,0 +1,150 @@
+CREATE TABLE registros(
+nombre CHAR(20) NOT NULL, 
+ap_paterno CHAR(20) NOT NULL, 
+ap_materno CHAR(20) NOT NULL,
+n_cuenta VARCHAR(10) PRIMARY KEY,
+carrera CHAR(100),
+semestre INT(2),
+tipo_u INT(1) NOT NULL,
+correo VARCHAR(40) NOT NULL,
+fecha_nac DATE,
+contrasena VARCHAR(20) NULL);
+
+-------------------------------------------------------------------
+
+CREATE TABLE catalogo(
+ISBN VARCHAR(10) PRIMARY KEY, 
+nom_libro VARCHAR(40) NOT NULL,
+editorial VARCHAR (40),
+ejemplares INT(4));
+
+-------------------------------------------------------------------
+
+CREATE TABLE prestamos(
+n_cuenta VARCHAR(10),
+fecha_dev DATE NOT NULL,
+fecha_sol DATE NOT NULL,
+solicitudes INT(4) NOT NULL,
+ISBN VARCHAR(10),
+FOREIGN KEY (n_cuenta) REFERENCES registros(n_cuenta) ON UPDATE CASCADE,
+FOREIGN KEY (ISBN) REFERENCES catalogo(ISBN) ON UPDATE CASCADE);
+
+-------------------------------------------------------------------
+
+INSERT INTO registros (nombre, ap_paterno, ap_materno, n_cuenta, carrera, semestre, tipo_u, correo, fecha_nac, contraseña) VALUES
+('Luis', 'Martinez', 'Fragoso', '158420-A', 'Comunicacion', '4', '0', '158420A@correo.uia.mx', '2000-04-18', '158420A'),
+('Maria', 'Gutierrez', 'Lopez', '203318-3', 'Diseño', '7', '0', '2033183@correo.uia.mx', '1999-11-23', '2033183'),
+('Ana', 'Rivera', 'Vazquez', '220710-6', 'Industrial', '5', '0', '2207106@correo.uia.mx', '1995-07-10', '2207106'),
+('Carlos', 'Jimenez', 'Prado', '140321-0', 'Filosofia', '11', '0', '1403210@correo.uia.mx', '1995-08-15', '1403210'),
+('Juan Carlos', 'Eralta', 'Martinez', '231807-A', 'Mecanica', '10', '1', '231807A@correo.uia.mx', '1983-11-03', '231807A');
+
+-------------------------------------------------------------------
+
+INSERT INTO catalogo (isbn,nom_libro,editorial,ejemplares) VALUES 
+('1203','Cerebro y Libertad','Ariel', '10'),
+('1202','Maraton', 'Ariel','5'),
+('1201','Parasitos','Ariel','3'),
+('1200', 'El Instinto','Alfaguara','6'),
+('1199', 'Momo','Alfaguara','4'),
+('1198','King','Alfaguara','3'),
+('1197','Inferno','Planeta','8'),
+('1196','El delfín','Salamandra','2'),
+('1195','Yurei','Satori','12');
+
+-------------------------------------------------------------------
+
+INSERT INTO catalogo (isbn,nom_libro,editorial,ejemplares) VALUES
+('1194','Yokai','Satori','3'),
+('1193','Gog','Planeta','8'),
+('1192','Babel','Trotta','12'),
+('1191','Siete Papas','Trotta','14'),
+('1190','Propiedad Digital','Trotta','9'),
+('1189','Genio y tinta','Lumen','10'),
+('1188','Tokio','Satori','1'),
+('1187','Relatos','Lumen','13'),
+('1186','Hambiento','Planeta','3'),
+('1185','Corazonada','Planeta','8'),
+('1184','Días de Navidad','Lumen','11');
+
+-------------------------------------------------------------------
+
+DELIMITER $$
+
+CREATE PROCEDURE registro_bib(ncuenta VARCHAR(20), nsolicitudes INT, isb VARCHAR(10))
+BEGIN
+    DECLARE fechaD DATE;
+    DECLARE fechaS DATE;
+    DECLARE temp INT;
+    SET fechaS = CURDATE();
+    SET fechaD = fechaS;
+    SET fechaD = DATE_ADD(fechaD, INTERVAL 8 DAY);
+    INSERT INTO prestamos (n_cuenta, fecha_dev, fecha_sol, solicitudes, ISBN) VALUES
+    (ncuenta, fechaD, fechaS, nsolicitudes, isb);
+    UPDATE catalogo SET ejemplares = ejemplares - nsolicitudes WHERE ISBN = isb;
+END$$
+
+DELIMITER ;
+    
+-------------------------------------------------------------------
+
+DELIMITER $$
+
+CREATE PROCEDURE devolucion_bib(ncuenta VARCHAR(20), ndevoluciones INT, isb VARCHAR(10))
+BEGIN
+    DECLARE fechaA DATE;
+    DECLARE fechaD DATE;
+    DECLARE prest INT DEFAULT 0;
+    SET fechaA = CURDATE();
+
+    SELECT solicitudes INTO prest FROM prestamos WHERE n_cuenta = ncuenta AND ISBN = isb;
+    SELECT fecha_dev INTO fechaD FROM prestamos WHERE n_cuenta = ncuenta AND ISBN = isb;
+    SET prest = prest - ndevoluciones;
+    IF prest = 0 THEN
+         DELETE FROM prestamos WHERE n_cuenta = ncuenta AND ISBN = isb;
+    ELSE
+         UPDATE prestamos SET solicitudes = prest WHERE n_cuenta = ncuenta AND ISBN = isb;
+    END IF;
+    UPDATE catalogo SET ejemplares = ejemplares + ndevoluciones WHERE ISBN = isb;
+    IF fechaA < fechaD THEN
+         SELECT CONCAT('Devolucion a tiempo') AS dev;
+    ELSE
+         SELECT CONCAT('Devolucion tardia') AS dev;
+    END IF;
+END$$
+
+DELIMITER ;
+
+-------------------------------------------------------------------
+
+DELIMITER $$
+
+CREATE PROCEDURE busqueda_bib(op INT, param VARCHAR(100))
+BEGIN
+    DECLARE busq VARCHAR(100);
+    SET busq = CONCAT(param, '%');
+    IF op = 1 THEN
+        SELECT n_cuenta, nombre, ap_paterno, nom_libro, solicitudes, fecha_sol, fecha_dev FROM prestamos
+        NATURAL JOIN registros
+        NATURAL JOIN catalogo
+        WHERE nombre LIKE busq;
+    ELSEIF op = 2 THEN
+        SELECT n_cuenta, nombre, ap_paterno, nom_libro, solicitudes, fecha_sol, fecha_dev FROM prestamos
+        NATURAL JOIN registros
+        NATURAL JOIN catalogo
+        WHERE n_cuenta LIKE busq;
+    ELSEIF op = 3 THEN
+        SELECT n_cuenta, nombre, ap_paterno, nom_libro, solicitudes, fecha_sol, fecha_dev FROM prestamos
+        NATURAL JOIN registros
+        NATURAL JOIN catalogo
+        WHERE carrera LIKE busq;
+    ELSEIF op = 4 THEN
+        SELECT n_cuenta, nombre, ap_paterno, nom_libro, solicitudes, fecha_sol, fecha_dev FROM prestamos
+        NATURAL JOIN registros
+        NATURAL JOIN catalogo
+        WHERE nom_libro LIKE busq;
+    ELSE
+        SELECT busq = CONCAT('Seleccion incorrecta') AS res;
+    END IF;
+END$$
+
+DELIMITER ;
