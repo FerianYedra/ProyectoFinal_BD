@@ -154,7 +154,6 @@ int main(int argc, char *argv){
 		}
 
 	}
-	mysql_free_result(res);
 	//-------------------------Cerrar sesión-----------------------------
 	mysql_close(&mysql);
 	return 0;

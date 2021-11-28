@@ -23,7 +23,9 @@ int pedir_libro(char user[], char buffer[], MYSQL_RES *res, MYSQL mysql){
 				
 				sprintf(buffer, "SELECT nom_libro, ISBN  FROM catalogo WHERE nom_libro LIKE '%s%%'", nom);
                 		//printf("El query es \"%s\"\n", buffer);
-                		if(mysql_query(&mysql, buffer)){
+				int flag = mysql_query(&mysql, buffer);
+				printf("flag: %i\n", flag);
+                		if(flag){
                         		fprintf(stderr, "Error: No se ejecuto el query, %s\n", mysql_error(&mysql));
                         		abort();
                 		}
@@ -40,6 +42,7 @@ int pedir_libro(char user[], char buffer[], MYSQL_RES *res, MYSQL mysql){
 				}
 				printf("Fin de busqueda\n\n");
 				printf("\033[0m");
+				mysql_free_result(res);
 			       break;
 			case 2:
 			       check = 0;
@@ -77,16 +80,13 @@ int pedir_libro(char user[], char buffer[], MYSQL_RES *res, MYSQL mysql){
                         			fprintf(stderr, "Error: No se ejecuto el query, %s\n", mysql_error(&mysql));
                         			abort();
                 			}
-                			if(!(res = mysql_store_result(&mysql))){
-                        			fprintf(stderr, "Error: No se guardo el query, %s\n", mysql_error(&mysql));
-                        			abort();
-                			}
 					printf("\033[0;32m");
 					printf("Solicitud realizada con exito\n");
 					printf("\033[0m");
 				}else{
 					printf("No hay suficientes ejemplares\n");
 				}
+				mysql_free_result(res);
 			       break;
 			case 3:
 			       loop = 1;
@@ -142,6 +142,7 @@ int regresar_libro(char user[], char buffer[], MYSQL_RES *res, MYSQL mysql){
 				}
 				printf("Fin de busqueda\n\n");
 				printf("\033[0m");
+				mysql_free_result(res);
 			       break;
 			case 2:
 			       check = 0;
@@ -155,7 +156,7 @@ int regresar_libro(char user[], char buffer[], MYSQL_RES *res, MYSQL mysql){
                         		abort();
                 		}
 
-                		if(!(res = mysql_store_result(&mysql))){
+				if(!(res = mysql_store_result(&mysql))){
                         		fprintf(stderr, "Error: No se guardo el query, %s\n", mysql_error(&mysql));
                         		abort();
                 		}
@@ -191,6 +192,7 @@ int regresar_libro(char user[], char buffer[], MYSQL_RES *res, MYSQL mysql){
 				}else{
 					printf("Número de devoluciones incorrecta\n");
 				}
+				mysql_free_result(res);
 				break;
 			case 3:
 			       loop = 1;
@@ -422,7 +424,7 @@ int modo_admin(char user[], char buffer[], MYSQL_RES *res, MYSQL mysql){
 					default:
 						printf("Selección invalida\n");
 						break;
-                			}
+				}	
 				break;
 			case 5:
 				system("clear");
@@ -437,22 +439,24 @@ int modo_admin(char user[], char buffer[], MYSQL_RES *res, MYSQL mysql){
 				printf("5 - Regresar\n");
 				printf("Selecciona una opción: ");
 				scanf(" %i", &op);
-				printf("Ingresa el parametro: ");
-				scanf(" %s", busq);
-			        
 				if(op == 5){
 					break;
 				}
+				printf("Ingresa el parametro: ");
+				scanf(" %s", busq);
+			        
 				sprintf(buffer, "CALL busqueda_bib('%i', '%s')", op, busq);
                 		//printf("El query es \"%s\"\n", buffer);
                 		if(mysql_query(&mysql, buffer)){
-                        		fprintf(stderr, "Error: No se ejecuto el query, %s\n", mysql_error(&mysql));
+					fprintf(stderr, "Error: No se ejecuto el query, %s\n", mysql_error(&mysql));
                         		abort();
                 		}
-                		if(!(res = mysql_store_result(&mysql))){
+				while(mysql_next_result(&mysql)){
+					if(!(res = mysql_store_result(&mysql))){
                         		fprintf(stderr, "Error: No se guardo el query, %s\n", mysql_error(&mysql));
                         		abort();
-                		}
+                			}
+				}
 				printf("\033[0;36m");
 				while(fil = mysql_fetch_row(res)){
 					printf("|Cuenta \t|Nombre\t\t|Ap Paterno\t|Nombre Libro\t|Ejemplares pedidos\t|Fecha Solicitud\t|Fecha Devolución|\n");
@@ -461,7 +465,6 @@ int modo_admin(char user[], char buffer[], MYSQL_RES *res, MYSQL mysql){
 				printf("\033[0;32m");
 				printf("Busqueda realizada exitosamente\n");
 				printf("\033[0m");
-
 				mysql_free_result(res);
 				break;
 			case 6:
@@ -482,14 +485,11 @@ int modo_admin(char user[], char buffer[], MYSQL_RES *res, MYSQL mysql){
                        				fprintf(stderr, "Error: No se ejecuto el query, %s\n", mysql_error(&mysql));
                        				abort();
 					}
-                			if(!(res = mysql_store_result(&mysql))){
-                        			fprintf(stderr, "Error: No se guardo el query, %s\n", mysql_error(&mysql));
-                        			abort();
-                			}
 					printf("\033[0;32m");
 					printf("Usuario eliminado exitosamente\n");
 					printf("\033[0m");
 				}
+				break;
 
 			case 7:
 				printf("Saliendo...\n");
