@@ -1,7 +1,17 @@
 #include "header.h"
 
+/**
+ * @file main.c
+ * @brief Este es el codigo principal del programa, inicialmente el programa conecta a la base de datos
+ *        e inicia secion en el localhost en la cuenta im20fyl, posteriormente, se encarga de hacerle el
+ *        login al usuario y revisar su accesisbilidad como usuario o administrador para desplegar el menu 
+ *        adecuado.
+ * @author Jaen Izamar, Jorge Rojas, Fernando Yedra
+ * @date 29/11/2021
+ */
+
 int main(int argc, char *argv){
-	//Conectar la base de datos
+	//---------------------- Conectar la base de datos ---------------------------
 	char buffer[1024];
 	char *server = "localhost";
 	char *user = "im20fyl";

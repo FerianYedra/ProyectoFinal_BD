@@ -1,5 +1,19 @@
 #include "header.h"
 
+/**
+ * @file funciones.c
+ * @brief Esta funcion principalmente busca y realiza la solicitud de un libro, la solicitud
+ *        se realiza por medio de el ISBN pero tambien se puede buscar este por el nombre de
+ *        el libro. La funcion manda a llamar el procedimiento registro_bib.
+ * @author Jaen Izamar, Jorge Rojas, Fernando Yedra.
+ * @date 29/11/2021
+ * @param user[]	contiene el n_cuenta del ususario que la manda a llamar
+ * @param buffer[]	string que guarda los querys a llamar
+ * @param *res		variable MYSQL_RES que guarda los resultados de los querys
+ * @param mysql		variable MYSQL que contiene la conexión a la BD
+ * @return 1 		en caso de ser correcto
+ */
+
 int pedir_libro(char user[], char buffer[], MYSQL_RES *res, MYSQL mysql){
 	int loop = 0;
 	int selec, isbn, ejem, disp, check = 0;
@@ -18,13 +32,14 @@ int pedir_libro(char user[], char buffer[], MYSQL_RES *res, MYSQL mysql){
 		scanf(" %i", &selec);
 		switch (selec){
 			case 1:
+				//caso 1: Se hace la busqueda de un ISBN por nombre del libro
 				printf("Ingresar nombre: ");
 				scanf(" %s", nom);
 				
 				sprintf(buffer, "SELECT nom_libro, ISBN  FROM catalogo WHERE nom_libro LIKE '%s%%'", nom);
                 		//printf("El query es \"%s\"\n", buffer);
 				int flag = mysql_query(&mysql, buffer);
-				printf("flag: %i\n", flag);
+				//printf("flag: %i\n", flag);
                 		if(flag){
                         		fprintf(stderr, "Error: No se ejecuto el query, %s\n", mysql_error(&mysql));
                         		abort();
@@ -45,6 +60,7 @@ int pedir_libro(char user[], char buffer[], MYSQL_RES *res, MYSQL mysql){
 				mysql_free_result(res);
 			       break;
 			case 2:
+			       //caso 2: Despliega los ejemplares del libro solicitado y hace el query para realizar el rpestamo
 			       check = 0;
 			       printf("Ingresa el ISBN: ");
 			       scanf(" %i", &isbn);
@@ -62,7 +78,7 @@ int pedir_libro(char user[], char buffer[], MYSQL_RES *res, MYSQL mysql){
                 		}
 
 			        while(fil = mysql_fetch_row(res)){
-					printf("El libro %s tiene %s ejemplares\n", fil[0], fil[2]);
+					printf("El libro (%s) tiene %s ejemplares\n", fil[0], fil[2]);
 					strcpy(query, fil[2]);
 					check += 1;
 				}
@@ -101,6 +117,19 @@ return 0;
 }
 
 //-------------------------------------------------------------------------------------------------
+/**
+ * @brief Muy similar a la funcion pedir_libro, revisa que haya un prestamo de un libro indicado por ISBN
+ *        y en casod e ser correcto manda a llamar el procedimiento devolucion_bib para actualizar/borrar
+ *        los registos adecuados, revisa si la entrega se realizo en el tiempo adecuado de 8 dias y le
+ *        notifica al usuario.
+ * @author Jaen Izamar, Jorge Rojas, Fernando Yedra.
+ * @date 29/11/2021
+ * @param user[]	contiene el n_cuenta del ususario que la manda a llamar
+ * @param buffer[]	string que guarda los querys a llamar
+ * @param *res		variable MYSQL_RES que guarda los resultados de los querys
+ * @param mysql		variable MYSQL que contiene la conexión a la BD
+ * @return 1 		en caso de ser correcto
+ */
 
 int regresar_libro(char user[], char buffer[], MYSQL_RES *res, MYSQL mysql){
 	int loop = 0, check = 0;
@@ -120,6 +149,7 @@ int regresar_libro(char user[], char buffer[], MYSQL_RES *res, MYSQL mysql){
 		scanf(" %i", &selec);
 		switch (selec){
 			case 1:
+				//caso 1: Se hace la busqueda de un ISBN por nombre del libro
 				printf("Ingresar nombre: ");
 				scanf(" %s", nom);
 				
@@ -145,6 +175,7 @@ int regresar_libro(char user[], char buffer[], MYSQL_RES *res, MYSQL mysql){
 				mysql_free_result(res);
 			       break;
 			case 2:
+			       //caso 2: se hace la busqueda del prestamo y se llama a actualizar las tablas
 			       check = 0;
 			       printf("Ingresar ISBN del libro a regresar: ");
 			       scanf(" %i", &isbn);
@@ -207,6 +238,19 @@ return 0;
 }
 
 //-------------------------------------------------------------------------------------------------
+/**
+ * @brief Esta es la funcion del administrador, inicialmente despliega un menu similar al del usuario pero
+ *        con 4 opciones extra que pertenecen al administrador, estas le permiten dar de alta un usuario,
+ *        actualzar un usuario existente, buscar un usuaruo que tenga prestamos y eliminar un usuario.
+ *        Aqui es donde se usa el struct para guardar y manipular la infomracion que se solicite.
+ * @author Jaen Izamar, Jorge Rojas, Fernando Yedra.
+ * @date 29/11/2021
+ * @param user[]	contiene el n_cuenta del ususario que la manda a llamar
+ * @param buffer[]	string que guarda los querys a llamar
+ * @param *res		variable MYSQL_RES que guarda los resultados de los querys
+ * @param mysql		variable MYSQL que contiene la conexión a la BD
+ * @return 1 		en caso de ser correcto
+ */
 
 int modo_admin(char user[], char buffer[], MYSQL_RES *res, MYSQL mysql){
 	struct usuario nuevo;
@@ -231,12 +275,15 @@ int modo_admin(char user[], char buffer[], MYSQL_RES *res, MYSQL mysql){
 		scanf(" %i", &selec);
 		switch(selec){
 			case 1:
+				//caso 1: pedir un libro
 				pedir_libro(user, buffer, res, mysql);
 				break;
 			case 2:
+				//caso 2: regresar un libro
 				regresar_libro(user, buffer, res, mysql);
 				break;
 			case 3:
+				//caso 3: dar de alta un usuario
 				system("clear");
 				printf("\033[0;33m");
 				printf("--------- Alta de usuario --------\n");
@@ -278,6 +325,7 @@ int modo_admin(char user[], char buffer[], MYSQL_RES *res, MYSQL mysql){
 				printf("\033[0m");
 				break;
 			case 4:
+				//caso 4: actualizar un usuario
 				system("clear");
 				printf("\033[0;33m");
 				printf("---------- Actualizar usuario ---------\n");
@@ -299,6 +347,7 @@ int modo_admin(char user[], char buffer[], MYSQL_RES *res, MYSQL mysql){
 				scanf(" %i", &selec2);
 				switch(selec2){
 					case 1:
+						//caso 1: atualizar por nombre
 						printf("Ingresa el nuevo nombre: ");
 						scanf(" %s", nuevo.nom);
 						sprintf(buffer, "UPDATE registros SET nombre = '%s' WHERE n_cuenta = '%s'", nuevo.nom, ncuenta);
@@ -312,6 +361,7 @@ int modo_admin(char user[], char buffer[], MYSQL_RES *res, MYSQL mysql){
 						printf("\033[0m");
 						break;
 					case 2:
+						//caso 2: actualizar por apellido paterno
 						printf("Ingresa el nuevo apellido: ");
 						scanf(" %s", nuevo.apPater);
 						sprintf(buffer, "UPDATE registros SET ap_paterno = '%s' WHERE n_cuenta = '%s'", nuevo.apPater, ncuenta);
@@ -325,6 +375,7 @@ int modo_admin(char user[], char buffer[], MYSQL_RES *res, MYSQL mysql){
 						printf("\033[0m");
 						break;
 					case 3:
+						//caso 3: actualizar por apellido materno
 						printf("Ingresa el nuevo apellido: ");
 						scanf(" %s", nuevo.apMater);
 						sprintf(buffer, "UPDATE registros SET ap_materno = '%s' WHERE n_cuenta = '%s'", nuevo.apMater, ncuenta);
@@ -338,6 +389,7 @@ int modo_admin(char user[], char buffer[], MYSQL_RES *res, MYSQL mysql){
 						printf("\033[0m");
 						break;
 					case 4:
+						//caso 4: actualizar nombre de la carrera
 						printf("Ingresa la nueva carrera: ");
 						scanf(" %s", nuevo.carr);
 						sprintf(buffer, "UPDATE registros SET carrera = '%s' WHERE n_cuenta = '%s'", nuevo.carr, ncuenta);
@@ -351,6 +403,7 @@ int modo_admin(char user[], char buffer[], MYSQL_RES *res, MYSQL mysql){
 						printf("\033[0m");
 						break;
 					case 5:
+						//caso 5: actualizar el semetre cruzando
 						printf("Ingresa el nuevo semestre: ");
 						scanf(" %i", &nuevo.sem);
 						sprintf(buffer, "UPDATE registros SET semestre = %i WHERE n_cuenta = '%s'", nuevo.sem, ncuenta);
@@ -364,6 +417,7 @@ int modo_admin(char user[], char buffer[], MYSQL_RES *res, MYSQL mysql){
 						printf("\033[0m");
 						break;
 					case 6:
+						//caso 6: actualizar el tipo de usaurio
 						printf("Ingresa el nuevo tipo de usuario (Admin = 1, Sol = 0: ");
 						scanf(" %i", &nuevo.tipoU);
 						sprintf(buffer, "UPDATE registros SET tipo_u = '%i' WHERE n_cuenta = '%s'", nuevo.tipoU, ncuenta);
@@ -377,6 +431,7 @@ int modo_admin(char user[], char buffer[], MYSQL_RES *res, MYSQL mysql){
 						printf("\033[0m");
 						break;
 					case 7:
+						//caso 7: actualizar el correo
 						printf("Ingresa el nuevo correo: ");
 						scanf(" %s", nuevo.corr);
 						sprintf(buffer, "UPDATE registros SET correo = '%s' WHERE n_cuenta = '%s'", nuevo.corr, ncuenta);
@@ -390,6 +445,7 @@ int modo_admin(char user[], char buffer[], MYSQL_RES *res, MYSQL mysql){
 						printf("\033[0m");
 						break;
 					case 8:
+						//caso 8: actualizar el anio de nacimiento
 						printf("Ingresa el nuevo año de nacimiento: ");
 						scanf(" %i", &nuevo.anioN);
 						printf("Ingresa el nuevo mes (número) de nacimiento: ");
@@ -407,6 +463,7 @@ int modo_admin(char user[], char buffer[], MYSQL_RES *res, MYSQL mysql){
 						printf("\033[0m");
 						break;
 					case 9:
+						//caso 9: actualziar contrasena
 						printf("Ingresa la nueva contraseña: ");
 						scanf(" %s", nuevo.cont);
 						sprintf(buffer, "UPDATE registros SET contrasena = '%s' WHERE n_cuenta = '%s'", nuevo.cont, ncuenta);
@@ -427,6 +484,7 @@ int modo_admin(char user[], char buffer[], MYSQL_RES *res, MYSQL mysql){
 				}	
 				break;
 			case 5:
+				//caso 5: busqueda de usuario
 				system("clear");
 				printf("\033[0;33m");
 				printf("----------- Busqueda de usuario -----------\n");
@@ -468,6 +526,7 @@ int modo_admin(char user[], char buffer[], MYSQL_RES *res, MYSQL mysql){
 				mysql_free_result(res);
 				break;
 			case 6:
+				//caso 6: eliminar usuario
 				system("clear");
 				printf("\033[0;33m");
 				printf("---------- Borrado de usuario -------------\n");

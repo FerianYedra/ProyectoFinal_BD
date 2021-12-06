@@ -1,3 +1,13 @@
+/**
+ * @file header.h
+ * @brief Este es el archivo de cabecera del programa, incluye las bibliotecas estandar de C
+ *        asi como la biblioteca de mysql para compilar las funciones especiales. Tambien incluye
+ *        los prototipos de las funciones a llamar y un struct con las variables de los usuarios 
+ *        como se crearon en la talba (registros).
+ * @author Jaen Izamar, Jorge Rojas, Fernando Yedra
+ * @date 29/11/2021
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

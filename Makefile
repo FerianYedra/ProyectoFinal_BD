@@ -1,3 +1,5 @@
+#Archivo con las instrucciones del make, contiene las instrucciones para mysql
+
 registroBib.out: main.o funciones.o
 	gcc main.o funciones.o -o registroBib.out -lnsl -lm -lz -lmysqlclient
 
